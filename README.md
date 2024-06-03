@@ -15,7 +15,7 @@ This document provides a step-by-step guide to implementing table partitioning i
 ## **Steps for Table Partitioning**
 
 ### **Step 1: Adding FileGroups and Mapping Files to Database**
-
+First, we need to create new filegroups and map them to corresponding files. Filegroups are logical storage units that simplify database management and improve performance. We will add three filegroups named [CIMSDE_2021], [CIMSDE_2022], and [CIMSDE_2023]. Each filegroup will be associated with a separate file on the disk. This ensures that data is distributed across different storage locations for better performance.
 Create new filegroups and map them to files based on historical data.
 
 ```sql
