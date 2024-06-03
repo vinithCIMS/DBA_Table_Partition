@@ -128,6 +128,7 @@ ORDER BY TableName, PartitionNumber;
 ### **Step 6: Install Partition Management Split Procedure**
 
 Before proceeding, ensure that the **`PartitionManagement_Split`** stored procedure is installed in  database.
+- [PartitionManagement_Split](PartitionManagement_Split.sql)
 
 ### **Step 7: Create Monthly Partitions One Year Forward**
 
