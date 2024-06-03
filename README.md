@@ -164,7 +164,7 @@ ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2024', FILENAME =
 
 ### **Step 9: Migrating Partitions to Desired Year-Wise FileGroup**
 
-Move partitions from the PRIMARY data file to the new yearly filegroup.
+Move partitions from the PRIMARY data file to the old year filegroup.
 
 ```sql
 
