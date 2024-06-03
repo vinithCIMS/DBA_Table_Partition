@@ -15,7 +15,7 @@ This document provides a step-by-step guide to implementing table partitioning i
 ## **Steps for Table Partitioning**
 
 ### **Step 1: Adding FileGroups and Mapping Files to Database**
-
+First, we need to create new filegroups and map them to corresponding files. Filegroups are logical storage units that simplify database management and improve performance. We will add three filegroups named [CIMSDE_2021], [CIMSDE_2022], and [CIMSDE_2023]. Each filegroup will be associated with a separate file on the disk. This ensures that data is distributed across different storage locations for better performance.
 Create new filegroups and map them to files based on historical data.
 
 ```sql
@@ -35,6 +35,7 @@ ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2023', FILENAME =
 ### **Step 2: Creating Partition Function**
 
 Define a partition function based on the date to split data into monthly partitions.
+Next, we define a partition function to distribute data across partitions based on a date column. A partition function defines how to map rows of a table or index into partitions. In this example, the partition function [pf_DateMonthly] will create monthly partitions. We specify date ranges to partition data from January 2010 to January 2024. The function uses the RANGE RIGHT option to include the specified date in the higher partition.
 
 ```sql
 
@@ -51,6 +52,7 @@ AS RANGE RIGHT FOR VALUES (
 ### **Step 3: Creating Partition Scheme**
 
 Map the partition function to the filegroups.
+After defining the partition function, we create a partition scheme. A partition scheme maps the partitions defined by the partition function to specific filegroups. Here, the partition scheme [ps_DateMonthly] maps the monthly partitions to the filegroups created earlier. Data from the year 2021 is mapped to [CIMSDE_2021], data from 2022 to [CIMSDE_2022], and data from 2023 to [CIMSDE_2023]. Data beyond these ranges is stored in the [PRIMARY] filegroup.
 
 ```sql
 
@@ -67,7 +69,9 @@ TO ([PRIMARY],--[Beyond old Data, This Filegroup can't be changed in Future]
 
 ### **Step 4: Creating and Applying the Partitioned Index**
 
-Drop the existing index and create a new partitioned clustered index.
+Drop the index If existed and create a new partitioned clustered index.
+
+To apply partitioning, we need to create a partitioned index on the table. First, we drop the existing index if it exists to avoid conflicts. Then, we create a new clustered index on the [InsertedTime] column. This index uses the previously defined partition scheme to distribute data across partitions. Partitioned indexes enhance query performance by limiting data scans to relevant partitions.
 
 ```sql
 
@@ -89,6 +93,8 @@ GO
 ### **Step 5: Viewing Partitioned Table Information**
 
 Retrieve information about the partitioned table.
+
+It's crucial to verify that the table is partitioned correctly. We query system views to retrieve information about the partitioned table. The query provides details like schema name, table name, partition scheme, filegroup, function, and boundary values. This information helps in understanding how data is distributed across partitions. Monitoring partitions ensures that data management goals are being met.
 
 ```sql
 
@@ -130,9 +136,12 @@ ORDER BY TableName, PartitionNumber;
 Before proceeding, ensure that the **`PartitionManagement_Split`** stored procedure is installed in  database.
 - [PartitionManagement_Split](PartitionManagement_Split.sql)
 
+To manage partitions dynamically, we'll install a stored procedure named PartitionManagement_Split. This procedure facilitates the creation of new partitions based on the specified partition function. It accepts parameters such as the partition function name, target range value, and partition range interval. Installing this procedure provides a convenient way to automate partition management tasks.
+
 ### **Step 7: Create Monthly Partitions One Year Forward**
 
 Automatically create monthly partitions for one year into the future.
+Now, we'll use the PartitionManagement_Split procedure to create monthly partitions for one year forward from the current date. We specify the partition function name (pf_DateMonthly), the filegroup to create partitions (PRIMARY), and the partition range interval. This step ensures that the table remains optimized for data storage and retrieval by continuously managing partitions.
 
 ```sql
 
@@ -153,6 +162,7 @@ EXEC dbo.[PartitionManagement_Split]
 ### **Step 8: Add Future FileGroup and Mapping Files**
 
 Prepare for future data by adding a new filegroup and mapping files.
+Next, we'll add a new filegroup named [CIMSDE_2024] to accommodate data for the year 2024. We associate this filegroup with a corresponding file on the disk. By adding filegroups and mapping files based on future data, we ensure seamless data management and performance optimization.
 
 ```sql
 
@@ -165,6 +175,8 @@ ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2024', FILENAME =
 ### **Step 9: Migrating Partitions to Desired Year-Wise FileGroup**
 
 Move partitions from the PRIMARY data file to the old year filegroup.
+
+Finally, we'll migrate partitions from the PRIMARY filegroup to the desired year-wise filegroup ([CIMSDE_2024]). This migration involves splitting existing partitions and merging them with the target filegroup. By redistributing partitions, we maintain data integrity and optimize storage utilization based on the data's temporal characteristics.
 
 ```sql
 
