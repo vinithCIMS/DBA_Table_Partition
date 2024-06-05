@@ -134,7 +134,7 @@ ORDER BY TableName, PartitionNumber;
 ### **Step 6: Install Partition Management Split Procedure**
 
 Before proceeding, ensure that the **`PartitionManagement_Split`** stored procedure is installed in  database.
-- [PartitionManagement_Split](PartitionManagement_Split.sql)
+- [PartitionManagement_Split](https://github.com/vinithCIMS/DBA_Table_Partition/blob/main/6_PartitionManagement_Split.sql)
 
 To manage partitions dynamically, we'll install a stored procedure named PartitionManagement_Split. This procedure facilitates the creation of new partitions based on the specified partition function. It accepts parameters such as the partition function name, target range value, and partition range interval. Installing this procedure provides a convenient way to automate partition management tasks.
 
