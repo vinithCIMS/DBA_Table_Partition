@@ -10,22 +10,24 @@ This document provides a step-by-step guide to implementing table partitioning i
 
 - SQL Server Management Studio (SSMS)
 - Appropriate permissions to modify the database structure
-- A database named **`[VIA_HA_CIMSDEOnsite]`**
+- A database owner should be **`[sa]`**
 
 ## **Steps for Table Partitioning**
 
 ### **Step 1: Adding FileGroups and Mapping Files to Database**
-First, we need to create new filegroups and map them to corresponding files. Filegroups are logical storage units that simplify database management and improve performance. We will add three filegroups named [CIMSDE_2021], [CIMSDE_2022], and [CIMSDE_2023]. Each filegroup will be associated with a separate file on the disk. This ensures that data is distributed across different storage locations for better performance.
+First, we need to create new filegroups and map them to corresponding files. Filegroups are logical storage units that simplify database management and improve performance. We will add four filegroups named [CIMSDE_OLD], [CIMSDE_2021], [CIMSDE_2022], and [CIMSDE_2023]. Each filegroup will be associated with a separate file on the disk. This ensures that data is distributed across different storage locations for better performance.
 Create new filegroups and map them to files based on historical data.
 
 ```sql
 
 -- Adding filegroups
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [CIMSDE_OLD];
 ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [CIMSDE_2021];
 ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [CIMSDE_2022];
 ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [CIMSDE_2023];
 
 -- Adding files to the filegroups
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_OLD', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\CIMSDE_2021.ndf') TO FILEGROUP [CIMSDE_OLD];
 ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2021', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\CIMSDE_2021.ndf') TO FILEGROUP [CIMSDE_2021];
 ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2022', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\CIMSDE_2022.ndf') TO FILEGROUP [CIMSDE_2022];
 ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2023', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\CIMSDE_2023.ndf') TO FILEGROUP [CIMSDE_2023];
@@ -35,14 +37,14 @@ ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2023', FILENAME =
 ### **Step 2: Creating Partition Function**
 
 Define a partition function based on the date to split data into monthly partitions.
-Next, we define a partition function to distribute data across partitions based on a date column. A partition function defines how to map rows of a table or index into partitions. In this example, the partition function [pf_DateMonthly] will create monthly partitions. We specify date ranges to partition data from January 2010 to January 2024. The function uses the RANGE RIGHT option to include the specified date in the higher partition.
+Next, we define a partition function to distribute data across partitions based on a date column. A partition function defines how to map rows of a table or index into partitions. In this example, the partition function [pf_DateMonthly] will create monthly partitions. We specify date ranges to partition data from January 2000 to January 2021 will be on [CIMSDE_OLD] and forward years should be year wise datafile . The function uses the RANGE RIGHT option to include the specified date in the higher partition.
 
 ```sql
 
 CREATE PARTITION FUNCTION [pf_DateMonthly](datetime)
 AS RANGE RIGHT FOR VALUES (
-    '2010-01-01',
-	'2021-02-01', '2021-03-01', '2021-04-01', '2021-05-01', '2021-06-01','2021-07-01', '2021-08-01', '2021-09-01', '2021-10-01', '2021-11-01','2021-12-01', '2022-01-01',
+    '2000-01-01','2021-01-01',
+	'2021-02-01','2021-03-01', '2021-04-01', '2021-05-01', '2021-06-01','2021-07-01', '2021-08-01', '2021-09-01', '2021-10-01', '2021-11-01','2021-12-01', '2022-01-01',
 	'2022-02-01', '2022-03-01', '2022-04-01', '2022-05-01', '2022-06-01','2022-07-01', '2022-08-01', '2022-09-01', '2022-10-01', '2022-11-01', '2022-12-01', '2023-01-01',
 	'2023-02-01', '2023-03-01', '2023-04-01', '2023-05-01', '2023-06-01', '2023-07-01', '2023-08-01', '2023-09-01', '2023-10-01', '2023-11-01', '2023-12-01', '2024-01-01'
 );
@@ -59,7 +61,8 @@ After defining the partition function, we create a partition scheme. A partition
 CREATE PARTITION SCHEME [ps_DateMonthly]
 AS PARTITION [pf_DateMonthly]
 TO ([PRIMARY],--[Beyond old Data, This Filegroup can't be changed in Future]
-    [CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021],[CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021],[CIMSDE_2021], [CIMSDE_2021],[CIMSDE_2021],
+	[CIMSDE_OLD],
+    	[CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021],[CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021],[CIMSDE_2021], [CIMSDE_2021],[CIMSDE_2021],
 	[CIMSDE_2022], [CIMSDE_2022], [CIMSDE_2022], [CIMSDE_2022],[CIMSDE_2022], [CIMSDE_2022], [CIMSDE_2022], [CIMSDE_2022], [CIMSDE_2022],[CIMSDE_2022], [CIMSDE_2022],[CIMSDE_2022],
 	[CIMSDE_2023], [CIMSDE_2023], [CIMSDE_2023], [CIMSDE_2023],[CIMSDE_2023], [CIMSDE_2023], [CIMSDE_2023], [CIMSDE_2023], [CIMSDE_2023],[CIMSDE_2023], [CIMSDE_2023],[CIMSDE_2023],
 	[PRIMARY]--[Future all Boundaries will be in PRIMARY Datafile]
@@ -149,12 +152,12 @@ DECLARE @FutureValue datetime = DATEADD(year, 1, CONVERT(date, GETDATE())); --Ch
 DECLARE @PartitionRangeInterval datetime = DATEADD(dd, 1, 0);
 
 EXEC dbo.[PartitionManagement_Split]
-      @PartitionFunctionName = 'pf_DateMonthly', --Mention Partition Function_Name
-    , @RoundRobinFileGroups = 'PRIMARY', --Desired Datafile to be creating Partitions
-    , @TargetRangeValue = @FutureValue,
-    , @PartitionIncrementExpression = 'DATEADD(month, 1, CONVERT(datetime, @CurrentRangeValue))', --Increment Expression [Monthly, Quarterly, and Yearly]
-    , @PartitionRangeInterval = @PartitionRangeInterval,
-    , @DebugOnly = 0,
+      @PartitionFunctionName = 'pf_DateMonthly' --Mention Partition Function_Name
+    , @RoundRobinFileGroups = 'PRIMARY' --Desired Datafile to be creating Partitions
+    , @TargetRangeValue = @FutureValue
+    , @PartitionIncrementExpression = 'DATEADD(month, 1, CONVERT(datetime, @CurrentRangeValue))' --Increment Expression [Monthly, Quarterly, and Yearly]
+    , @PartitionRangeInterval = @PartitionRangeInterval
+    , @DebugOnly = 0
     , @AllowDataMovementForColumnstore = 1; -- Enable data movement for non-empty partitions with columnstore
 
 ```
