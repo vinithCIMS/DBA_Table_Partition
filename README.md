@@ -15,29 +15,29 @@ This document provides a step-by-step guide to implementing table partitioning i
 ## **Steps for Table Partitioning**
 
 ### **Step 1: Adding FileGroups and Mapping Files to Database**
-First, we need to create new filegroups and map them to corresponding files. Filegroups are logical storage units that simplify database management and improve performance. We will add four filegroups named [CIMSDE_OLD], [CIMSDE_2021], [CIMSDE_2022], and [CIMSDE_2023]. Each filegroup will be associated with a separate file on the disk. This ensures that data is distributed across different storage locations for better performance.
+First, we need to create new filegroups and map them to corresponding files. Filegroups are logical storage units that simplify database management and improve performance. We will add four filegroups named [VIA_HA_CIMSDEOnsite_OLD], [VIA_HA_CIMSDEOnsite_2021], [VIA_HA_CIMSDEOnsite_2022], and [VIA_HA_CIMSDEOnsite_2023]. Each filegroup will be associated with a separate file on the disk. This ensures that data is distributed across different storage locations for better performance.
 Create new filegroups and map them to files based on historical data.
 
 ```sql
 
 -- Adding filegroups
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [CIMSDE_OLD];
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [CIMSDE_2021];
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [CIMSDE_2022];
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [CIMSDE_2023];
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [VIA_HA_CIMSDEOnsite_OLD];
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [VIA_HA_CIMSDEOnsite_2021];
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [VIA_HA_CIMSDEOnsite_2022];
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [VIA_HA_CIMSDEOnsite_2023];
 
 -- Adding files to the filegroups
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_OLD', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\CIMSDE_2021.ndf') TO FILEGROUP [CIMSDE_OLD];
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2021', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\CIMSDE_2021.ndf') TO FILEGROUP [CIMSDE_2021];
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2022', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\CIMSDE_2022.ndf') TO FILEGROUP [CIMSDE_2022];
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2023', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\CIMSDE_2023.ndf') TO FILEGROUP [CIMSDE_2023];
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'VIA_HA_CIMSDEOnsite_OLD', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\VIA_HA_CIMSDEOnsite_2021.ndf') TO FILEGROUP [VIA_HA_CIMSDEOnsite_OLD];
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'VIA_HA_CIMSDEOnsite_2021', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\VIA_HA_CIMSDEOnsite_2021.ndf') TO FILEGROUP [VIA_HA_CIMSDEOnsite_2021];
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'VIA_HA_CIMSDEOnsite_2022', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\VIA_HA_CIMSDEOnsite_2022.ndf') TO FILEGROUP [VIA_HA_CIMSDEOnsite_2022];
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'VIA_HA_CIMSDEOnsite_2023', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\VIA_HA_CIMSDEOnsite_2023.ndf') TO FILEGROUP [VIA_HA_CIMSDEOnsite_2023];
 
 ```
 
 ### **Step 2: Creating Partition Function**
 
 Define a partition function based on the date to split data into monthly partitions.
-Next, we define a partition function to distribute data across partitions based on a date column. A partition function defines how to map rows of a table or index into partitions. In this example, the partition function [pf_DateMonthly] will create monthly partitions. We specify date ranges to partition data from January 2000 to January 2021 will be on [CIMSDE_OLD] and forward years should be year wise datafile . The function uses the RANGE RIGHT option to include the specified date in the higher partition.
+Next, we define a partition function to distribute data across partitions based on a date column. A partition function defines how to map rows of a table or index into partitions. In this example, the partition function [pf_DateMonthly] will create monthly partitions. We specify date ranges to partition data from January 2000 to January 2021 will be on [VIA_HA_CIMSDEOnsite_OLD] and forward years should be year wise datafile . The function uses the RANGE RIGHT option to include the specified date in the higher partition.
 
 ```sql
 
@@ -54,17 +54,17 @@ AS RANGE RIGHT FOR VALUES (
 ### **Step 3: Creating Partition Scheme**
 
 Map the partition function to the filegroups.
-After defining the partition function, we create a partition scheme. A partition scheme maps the partitions defined by the partition function to specific filegroups. Here, the partition scheme [ps_DateMonthly] maps the monthly partitions to the filegroups created earlier. Data from the year 2021 is mapped to [CIMSDE_2021], data from 2022 to [CIMSDE_2022], and data from 2023 to [CIMSDE_2023]. Data beyond these ranges is stored in the [PRIMARY] filegroup.
+After defining the partition function, we create a partition scheme. A partition scheme maps the partitions defined by the partition function to specific filegroups. Here, the partition scheme [ps_DateMonthly] maps the monthly partitions to the filegroups created earlier. Data from the year 2021 is mapped to [VIA_HA_CIMSDEOnsite_2021], data from 2022 to [VIA_HA_CIMSDEOnsite_2022], and data from 2023 to [VIA_HA_CIMSDEOnsite_2023]. Data beyond these ranges is stored in the [PRIMARY] filegroup.
 
 ```sql
 
 CREATE PARTITION SCHEME [ps_DateMonthly]
 AS PARTITION [pf_DateMonthly]
 TO ([PRIMARY],--[Beyond old Data, This Filegroup can't be changed in Future]
-	[CIMSDE_OLD],
-    	[CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021],[CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021], [CIMSDE_2021],[CIMSDE_2021], [CIMSDE_2021],[CIMSDE_2021],
-	[CIMSDE_2022], [CIMSDE_2022], [CIMSDE_2022], [CIMSDE_2022],[CIMSDE_2022], [CIMSDE_2022], [CIMSDE_2022], [CIMSDE_2022], [CIMSDE_2022],[CIMSDE_2022], [CIMSDE_2022],[CIMSDE_2022],
-	[CIMSDE_2023], [CIMSDE_2023], [CIMSDE_2023], [CIMSDE_2023],[CIMSDE_2023], [CIMSDE_2023], [CIMSDE_2023], [CIMSDE_2023], [CIMSDE_2023],[CIMSDE_2023], [CIMSDE_2023],[CIMSDE_2023],
+	[VIA_HA_CIMSDEOnsite_OLD],
+    	[VIA_HA_CIMSDEOnsite_2021], [VIA_HA_CIMSDEOnsite_2021], [VIA_HA_CIMSDEOnsite_2021], [VIA_HA_CIMSDEOnsite_2021],[VIA_HA_CIMSDEOnsite_2021], [VIA_HA_CIMSDEOnsite_2021], [VIA_HA_CIMSDEOnsite_2021], [VIA_HA_CIMSDEOnsite_2021],		[VIA_HA_CIMSDEOnsite_2021],[VIA_HA_CIMSDEOnsite_2021], [VIA_HA_CIMSDEOnsite_2021],[VIA_HA_CIMSDEOnsite_2021],
+	[VIA_HA_CIMSDEOnsite_2022], [VIA_HA_CIMSDEOnsite_2022], [VIA_HA_CIMSDEOnsite_2022], [VIA_HA_CIMSDEOnsite_2022],[VIA_HA_CIMSDEOnsite_2022], [VIA_HA_CIMSDEOnsite_2022], [VIA_HA_CIMSDEOnsite_2022], [VIA_HA_CIMSDEOnsite_2022], 		[VIA_HA_CIMSDEOnsite_2022],[VIA_HA_CIMSDEOnsite_2022], [VIA_HA_CIMSDEOnsite_2022],[VIA_HA_CIMSDEOnsite_2022],
+	[VIA_HA_CIMSDEOnsite_2023], [VIA_HA_CIMSDEOnsite_2023], [VIA_HA_CIMSDEOnsite_2023], [VIA_HA_CIMSDEOnsite_2023],[VIA_HA_CIMSDEOnsite_2023], [VIA_HA_CIMSDEOnsite_2023], [VIA_HA_CIMSDEOnsite_2023], [VIA_HA_CIMSDEOnsite_2023], 		[VIA_HA_CIMSDEOnsite_2023],[VIA_HA_CIMSDEOnsite_2023], [VIA_HA_CIMSDEOnsite_2023],[VIA_HA_CIMSDEOnsite_2023],
 	[PRIMARY]--[Future all Boundaries will be in PRIMARY Datafile]
 );
 
@@ -165,13 +165,13 @@ EXEC dbo.[PartitionManagement_Split]
 ### **Step 8: Add Future FileGroup and Mapping Files**
 
 Prepare for future data by adding a new filegroup and mapping files.
-Next, we'll add a new filegroup named [CIMSDE_2024] to accommodate data for the year 2024. We associate this filegroup with a corresponding file on the disk. By adding filegroups and mapping files based on future data, we ensure seamless data management and performance optimization.
+Next, we'll add a new filegroup named [VIA_HA_CIMSDEOnsite_2024] to accommodate data for the year 2024. We associate this filegroup with a corresponding file on the disk. By adding filegroups and mapping files based on future data, we ensure seamless data management and performance optimization.
 
 ```sql
 
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [CIMSDE_2024];
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILEGROUP [VIA_HA_CIMSDEOnsite_2024];
 
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2024', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\CIMSDE_2024.ndf') TO FILEGROUP [CIMSDE_2024];
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'VIA_HA_CIMSDEOnsite_2024', FILENAME = 'W:\Temp\!!POC_Data_Table_Partition\HA_Test_Datafiles\VIA_HA_CIMSDEOnsite_2024.ndf') TO FILEGROUP [VIA_HA_CIMSDEOnsite_2024];
 
 ```
 
@@ -179,57 +179,57 @@ ALTER DATABASE [VIA_HA_CIMSDEOnsite] ADD FILE ( NAME = 'CIMSDE_2024', FILENAME =
 
 Move partitions from the PRIMARY data file to the old year filegroup.
 
-Finally, we'll migrate partitions from the PRIMARY filegroup to the desired year-wise filegroup ([CIMSDE_2024]). This migration involves splitting existing partitions and merging them with the target filegroup. By redistributing partitions, we maintain data integrity and optimize storage utilization based on the data's temporal characteristics.
+Finally, we'll migrate partitions from the PRIMARY filegroup to the desired year-wise filegroup ([VIA_HA_CIMSDEOnsite_2024]). This migration involves splitting existing partitions and merging them with the target filegroup. By redistributing partitions, we maintain data integrity and optimize storage utilization based on the data's temporal characteristics.
 
 ```sql
 
 -- Migrate each month's partition to the new filegroup
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-01-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-01-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-02-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-02-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-03-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-03-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-04-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-04-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-05-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-05-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-06-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-06-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-07-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-07-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-08-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-08-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-09-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-09-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-10-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-10-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-11-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-11-01');
 
 ALTER PARTITION FUNCTION pf_DateMonthly() MERGE RANGE ('2024-12-01');
-ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [CIMSDE_2024];
+ALTER PARTITION SCHEME ps_DateMonthly NEXT USED [VIA_HA_CIMSDEOnsite_2024];
 ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-12-01');
 
 ```
@@ -298,10 +298,10 @@ GO
 
 ```sql
 
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE CIMSDE_2021;
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE CIMSDE_2022;
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE CIMSDE_2023;
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE CIMSDE_2024;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE VIA_HA_CIMSDEOnsite_2021;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE VIA_HA_CIMSDEOnsite_2022;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE VIA_HA_CIMSDEOnsite_2023;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE VIA_HA_CIMSDEOnsite_2024;
 GO
 
 ```
@@ -316,10 +316,10 @@ GO
 
 ```sql
 
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP CIMSDE_2021;
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP CIMSDE_2022;
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP CIMSDE_2023;
-ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP CIMSDE_2024;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP VIA_HA_CIMSDEOnsite_2021;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP VIA_HA_CIMSDEOnsite_2022;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP VIA_HA_CIMSDEOnsite_2023;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP VIA_HA_CIMSDEOnsite_2024;
 GO
 
 ```
