@@ -312,7 +312,7 @@ GO
 
 ### Step 5: Remove the Filegroups
 
-**Objective:** Remove the filegroups `CIMSDE_2021`, `CIMSDE_2022`, `CIMSDE_2023`, and `CIMSDE_2024` from the database configuration.
+**Objective:** Remove the filegroups `VIA_HA_CIMSDEOnsite_2021`, `VIA_HA_CIMSDEOnsite_2022`, `VIA_HA_CIMSDEOnsite_2023`, and `VIA_HA_CIMSDEOnsite_2024` from the database configuration.
 
 ```sql
 
