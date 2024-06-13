@@ -234,3 +234,93 @@ ALTER PARTITION FUNCTION pf_DateMonthly() SPLIT RANGE ('2024-12-01');
 ## **Conclusion**
 
 By following these steps,  have successfully partitioned  table in SQL Server. This will help in managing and querying large datasets more efficiently. Ensure to periodically review and manage partitions based on  data growth and retention policies.
+
+
+## Table Partitioning Backout Plan
+
+This outlines step-by-step process to back out the table partitioning setup for the `[dbo].[ImportReceiptDetails]` table in the `[VIA_HA_CIMSDEOnsite]` database. The goal is to revert the table to its original, non-partitioned state, and remove all associated filegroups, files, partition schemes, and functions.
+
+### Step 1: Recreate the Clustered Index on the Primary Filegroup
+
+**Objective:** Move all data back to the primary filegroup by recreating the clustered index on the `InsertedTime` column and ensuring that all rows are located in the primary filegroup.
+
+```sql
+
+CREATE CLUSTERED INDEX [IX_ImportReceiptDetails_Partitioned] -- indexName
+    ON [dbo].[ImportReceiptDetails](InsertedTime) -- {TableName}(Partitioned_Column_Name)
+    WITH (DROP_EXISTING = ON)
+    ON [PRIMARY]; -- All rows should be PRIMARY
+GO
+
+```
+
+**Explanation:**
+
+- This command drops the existing partitioned clustered index and recreates it on the `PRIMARY` filegroup.
+- The `DROP_EXISTING = ON` option ensures that the current index is dropped and recreated without needing to delete it manually, which helps to reallocate data into the primary filegroup.
+
+### Step 2: Drop the Partition Scheme
+
+**Objective:** Remove the partition scheme `ps_DateMonthly` to disassociate it from the table.
+
+```sql
+
+DROP PARTITION SCHEME ps_DateMonthly;
+GO
+
+```
+
+**Explanation:**
+
+- The `DROP PARTITION SCHEME` command removes the partition scheme, ensuring that no tables can use this scheme for partitioning in the future.
+
+### Step 3: Drop the Partition Function
+
+**Objective:** Remove the partition function `pf_DateMonthly` to eliminate the partitioning logic.
+
+```sql
+
+DROP PARTITION FUNCTION pf_DateMonthly;
+GO
+
+```
+
+**Explanation:**
+
+- The `DROP PARTITION FUNCTION` command deletes the partition function, effectively removing the range definitions used for partitioning.
+
+### Step 4: Remove Database Files Associated with the Filegroups
+
+**Objective:** Remove the physical files that were associated with the partition-specific filegroups.
+
+```sql
+
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE CIMSDE_2021;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE CIMSDE_2022;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE CIMSDE_2023;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILE CIMSDE_2024;
+GO
+
+```
+
+**Explanation:**
+
+- The `REMOVE FILE` command is used to remove the specified data files from the database, which were previously associated with each partition-specific filegroup.
+
+### Step 5: Remove the Filegroups
+
+**Objective:** Remove the filegroups `CIMSDE_2021`, `CIMSDE_2022`, `CIMSDE_2023`, and `CIMSDE_2024` from the database configuration.
+
+```sql
+
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP CIMSDE_2021;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP CIMSDE_2022;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP CIMSDE_2023;
+ALTER DATABASE [VIA_HA_CIMSDEOnsite] REMOVE FILEGROUP CIMSDE_2024;
+GO
+
+```
+
+**Explanation:**
+
+- The `REMOVE FILEGROUP` command deletes the specified filegroups from the database, ensuring that they are no longer available for future use.
