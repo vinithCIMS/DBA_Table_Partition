@@ -1,3 +1,5 @@
+# Proof of Concept (POC) Document for Partition Table Truncate by using pr_partition_Truncate_table Stored Procedure
+
 Here is a step-by-step guide to creating and using the  `pr_partition_Truncate_table` stored procedure.
 
 This procedure is designed to truncate partitions based on specified retention criteria, ensuring efficient data management within partitioned tables.
